@@ -183,6 +183,7 @@ source = { editable = "." }
 dependencies = [
     { name = "einops" },
     { name = "fastapi" },
+    { name = "nvidia-cudnn-cu12" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -197,10 +198,16 @@ cuda = [
     { name = "transformers" },
 ]
 
+[package.dev-dependencies]
+cuda = [
+    { name = "nvidia-cudnn-cu12" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "einops", specifier = ">=0.8.1" },
     { name = "fastapi", specifier = ">=0.115.12" },
+    { name = "nvidia-cudnn-cu12", specifier = ">=9.5.1.17" },
     { name = "torch", marker = "extra == 'cpu'", specifier = ">=2.6.0", index = "https://download.pytorch.org/whl/cpu", conflict = { package = "jina-server", extra = "cpu" } },
     { name = "torch", marker = "extra == 'cuda'", specifier = ">=2.6.0", index = "https://download.pytorch.org/whl/cu126", conflict = { package = "jina-server", extra = "cuda" } },
     { name = "transformers", marker = "extra == 'cpu'", specifier = ">=4.52.3" },
@@ -208,6 +215,9 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.2" },
 ]
 provides-extras = ["cpu", "cuda"]
+
+[package.metadata.requires-dev]
+cuda = [{ name = "nvidia-cudnn-cu12", specifier = ">=9.5.1.17" }]
 
 [[package]]
 name = "jinja2"
@@ -262,6 +272,26 @@ wheels = [
     { url = "https://download.pytorch.org/whl/numpy-2.1.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1b8cde4f11f0a975d1fd59373b32e2f5a562ade7cde4f85b7137f3de8fbb29a0" },
     { url = "https://download.pytorch.org/whl/numpy-2.1.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6d95f286b8244b3649b477ac066c6906fbb2905f8ac19b170e2175d3d799f4df" },
     { url = "https://download.pytorch.org/whl/numpy-2.1.2-cp312-cp312-win_amd64.whl", hash = "sha256:456e3b11cb79ac9946c822a56346ec80275eaf2950314b249b512896c0d2505e" },
+]
+
+[[package]]
+name = "nvidia-cublas-cu12"
+version = "12.6.4.1"
+source = { registry = "https://download.pytorch.org/whl/cu126" }
+wheels = [
+    { url = "https://download.pytorch.org/whl/cu126/nvidia_cublas_cu12-12.6.4.1-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:08ed2686e9875d01b58e3cb379c6896df8e76c75e0d4a7f7dace3d7b6d9ef8eb" },
+]
+
+[[package]]
+name = "nvidia-cudnn-cu12"
+version = "9.5.1.17"
+source = { registry = "https://download.pytorch.org/whl/cu126" }
+dependencies = [
+    { name = "nvidia-cublas-cu12" },
+]
+wheels = [
+    { url = "https://download.pytorch.org/whl/cu126/nvidia_cudnn_cu12-9.5.1.17-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:9fd4584468533c61873e5fda8ca41bac3a38bcb2d12350830c69b0a96a7e4def" },
+    { url = "https://download.pytorch.org/whl/cu126/nvidia_cudnn_cu12-9.5.1.17-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:30ac3869f6db17d170e0e556dd6cc5eee02647abc31ca856634d5a40f82c15b2" },
 ]
 
 [[package]]

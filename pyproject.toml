@@ -24,6 +24,7 @@ cpu = [
 cuda = [
     "torch>=2.6.0",
     "transformers>=4.52.3",
+    "nvidia-cudnn-cu12>=9.5.1.17",
 ]
 
 [tool.uv.sources]
@@ -47,3 +48,8 @@ download-model = "jina_server.serve:main_download_model"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+cuda = [
+    "nvidia-cudnn-cu12>=9.5.1.17",
+]
