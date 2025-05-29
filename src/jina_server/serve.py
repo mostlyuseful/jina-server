@@ -1,4 +1,5 @@
 import logging
+import time
 import yaml
 from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
@@ -33,6 +34,8 @@ class EmbedRequestData(BaseModel):
 class EmbedResponseData(BaseModel):
     embedding: List[float]
     model_name: str
+    queue_duration_seconds: float
+    embedding_duration_seconds: float
 
 # --- Model Configuration ---
 MODEL_NAME = "jinaai/jina-embeddings-v3"
@@ -90,8 +93,11 @@ async def embed(payload: EmbedRequestData, request: Request):
     executor = request.app.state.inference_executor
     model_name = request.app.state.model_name
 
+    start_time = time.perf_counter()  # Record when request is received
     loop = asyncio.get_event_loop()
     try:
+        # Record time just before queuing inference
+        queue_start = time.perf_counter()
         embedding_list = await loop.run_in_executor(
             executor,
             _run_inference, # Pass the synchronous wrapper function
@@ -99,7 +105,19 @@ async def embed(payload: EmbedRequestData, request: Request):
             payload.text,   # Second argument to _run_inference
             payload.task    # Third argument to _run_inference
         )
-        return EmbedResponseData(embedding=embedding_list, model_name=model_name)
+        # Record time after inference completes
+        inference_end = time.perf_counter()
+        
+        # Calculate durations
+        queue_duration = queue_start - start_time  # Time from request to queuing
+        embedding_duration = inference_end - queue_start  # Time from queuing to completion
+        
+        return EmbedResponseData(
+            embedding=embedding_list,
+            model_name=model_name,
+            queue_duration_seconds=queue_duration,
+            embedding_duration_seconds=embedding_duration
+        )
     except Exception as e:
         print(f"Error during inference for text '{payload.text}': {e}")
         # Consider more specific error handling based on model exceptions
