@@ -6,17 +6,43 @@ readme = "README.md"
 authors = [
     { name = "Maurice-Pascal Sonnemann", email = "mpsonnemann@gmail.com" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-    "accelerate>=1.7.0",
-    "einops>=0.8.1",
     "fastapi>=0.115.12",
-    "transformers>=4.52.3",
+    "einops>=0.8.1",
     "uvicorn[standard]>=0.34.2",
 ]
 
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "cuda" }]]
+
+[project.optional-dependencies]
+cpu = [ 
+    "torch>=2.6.0",
+    "transformers>=4.52.3"
+]
+cuda = [
+    "torch>=2.6.0",
+    "transformers>=4.52.3",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cuda", extra = "cuda" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu126"
+
 [project.scripts]
-#jina-server = "jina_server.serve"
+serve = "jina_server.serve:main_serve"
+download-model = "jina_server.serve:main_download_model"
 
 [build-system]
 requires = ["hatchling"]
