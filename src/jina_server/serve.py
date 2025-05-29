@@ -2,6 +2,7 @@ import logging
 import yaml
 from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import FileResponse
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
@@ -103,6 +104,12 @@ async def embed(payload: EmbedRequestData, request: Request):
         print(f"Error during inference for text '{payload.text}': {e}")
         # Consider more specific error handling based on model exceptions
         raise HTTPException(status_code=500, detail=f"Error during model inference: {str(e)}")
+
+@app.get("/")
+async def index():
+    from pathlib import Path
+    template_path = Path(__file__).parent / "templates" / "index.html"
+    return FileResponse(template_path)
 
 def find_log_config(log_fn = "uvicorn_log_config.yaml") -> Optional[Path]:
     """
