@@ -37,7 +37,6 @@ cuda = [
     "nvidia-nccl-cu12>=2.21.5",
     "nvidia-nvjitlink-cu12>=12.6.85",
     "nvidia-nvtx-cu12>=12.6.77",
-    "flash-attn>=2.7.4.post1",
 ]
 
 [tool.uv.sources]
