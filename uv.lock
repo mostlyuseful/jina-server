@@ -103,6 +103,16 @@ wheels = [
 ]
 
 [[package]]
+name = "flash-attn"
+version = "2.7.4.post1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "einops" },
+    { name = "torch", version = "2.6.0+cu126", source = { registry = "https://download.pytorch.org/whl/cu126" } },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/34/9bf60e736ed7bbe15055ac2dab48ec67d9dbd088d2b4ae318fd77190ab4e/flash_attn-2.7.4.post1.tar.gz", hash = "sha256:f03485c9a49a4d68d0733acdcad80ab0e72afa025a777fdc2966ceccf9d51765", size = 5986610, upload-time = "2025-01-30T06:39:51.93Z" }
+
+[[package]]
 name = "fsspec"
 version = "2024.6.1"
 source = { registry = "https://download.pytorch.org/whl/cpu" }
@@ -193,6 +203,7 @@ cpu = [
     { name = "transformers" },
 ]
 cuda = [
+    { name = "flash-attn" },
     { name = "nvidia-cublas-cu12" },
     { name = "nvidia-cuda-cupti-cu12" },
     { name = "nvidia-cuda-nvrtc-cu12" },
@@ -219,6 +230,7 @@ cuda = [
 requires-dist = [
     { name = "einops", specifier = ">=0.8.1" },
     { name = "fastapi", specifier = ">=0.115.12" },
+    { name = "flash-attn", marker = "extra == 'cuda'", specifier = ">=2.7.4.post1" },
     { name = "nvidia-cublas-cu12", marker = "extra == 'cuda'", specifier = ">=12.6.4.1" },
     { name = "nvidia-cuda-cupti-cu12", marker = "extra == 'cuda'", specifier = ">=12.6.80" },
     { name = "nvidia-cuda-nvrtc-cu12", marker = "extra == 'cuda'", specifier = ">=12.6.77" },
