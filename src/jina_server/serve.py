@@ -1,15 +1,33 @@
+import logging
+import yaml
+from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
 import uvicorn
 import asyncio
 from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
-from transformers import AutoModel
 from pydantic import BaseModel
-from typing import List
+from typing import Dict, List, Optional
+from enum import Enum
 
 # --- Pydantic Models ---
+class TaskEnum(str, Enum):
+    """
+    Allowed task values for Jina embeddings.
+    See: https://jina.ai/embeddings-v3/
+    """
+    retrieval_query = 'retrieval.query'
+    retrieval_passage = 'retrieval.passage'
+    separation = 'separation'
+    classification = 'classification'
+    text_matching = 'text-matching'
+
 class EmbedRequestData(BaseModel):
     text: str
+    task: Optional[TaskEnum] = None
+
+    class Config:
+        use_enum_values = True
 
 class EmbedResponseData(BaseModel):
     embedding: List[float]
@@ -21,34 +39,44 @@ MODEL_NAME = "jinaai/jina-embeddings-v3"
 # --- Lifespan Management (Model Loading & Cleanup) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"Lifespan: Application startup... Loading model {MODEL_NAME}")
+    logger = logging.getLogger("uvicorn")
+    logger.info("Lifespan: Importing transformers")
+    from transformers import AutoModel
+    logger.info(f"Lifespan: Application startup... Loading model {MODEL_NAME}")
     model = AutoModel.from_pretrained(MODEL_NAME, trust_remote_code=True, device_map="auto")
     app.state.model = model
     app.state.model_name = MODEL_NAME
-    print(f"Lifespan: Model '{MODEL_NAME}' loaded successfully.")
+    logger.info(f"Lifespan: Model '{MODEL_NAME}' loaded successfully.")
 
     # ThreadPoolExecutor for serialized inference
     app.state.inference_executor = ThreadPoolExecutor(max_workers=1)
-    print("Lifespan: Inference executor created.")
-    
+    logger.info("Lifespan: Inference executor created.")
+
     yield  # Application is now running
-    
-    print("Lifespan: Application shutdown...")
+
+    logger.info("Lifespan: Application shutdown...")
     app.state.inference_executor.shutdown(wait=True)
-    print("Lifespan: Inference executor shut down.")
-    print("Lifespan: Resources cleaned up.")
+    logger.info("Lifespan: Inference executor shut down.")
+    logger.info("Lifespan: Resources cleaned up.")
 
 app = FastAPI(lifespan=lifespan)
 
 # --- Synchronous Inference Wrapper ---
-def _run_inference(model, text: str) -> List[float]:
+def _run_inference(model, text: str, task: Optional[str] = None) -> List[float]:
     """
     Synchronous function to run model inference.
-    To be executed in a ThreadPoolExecutor.
+    To be executed inPoolExecutorPoolExecutor.
+    
+    Args:
+        model: The loaded Jina model
+        text: Input text to embed
+        task: Optional task name (one of 'retrieval.query', 'retrieval.passage', 
+              'separation', 'classification', 'text-matching')
     """
     # .encode typically returns a list of embeddings (np.ndarray)
     # For a single text, we take the first element.
-    embedding_np = model.encode([text])[0]
+    # Pass the 'task' parameter to model.encode if provided
+    embedding_np = model.encode([text], task=task)[0]
     return embedding_np.tolist() # Convert numpy array to Python list for JSON serialization
 
 # --- API Endpoints ---
@@ -67,7 +95,8 @@ async def embed(payload: EmbedRequestData, request: Request):
             executor,
             _run_inference, # Pass the synchronous wrapper function
             model,          # First argument to _run_inference
-            payload.text    # Second argument to _run_inference
+            payload.text,   # Second argument to _run_inference
+            payload.task    # Third argument to _run_inference
         )
         return EmbedResponseData(embedding=embedding_list, model_name=model_name)
     except Exception as e:
@@ -75,8 +104,30 @@ async def embed(payload: EmbedRequestData, request: Request):
         # Consider more specific error handling based on model exceptions
         raise HTTPException(status_code=500, detail=f"Error during model inference: {str(e)}")
 
+def find_log_config(log_fn = "uvicorn_log_config.yaml") -> Optional[Path]:
+    """
+    Find the log configuration file (default "uvicorn_log_config.yaml") in this directory or the parent directories.
+    """
+    current_path = Path(__file__).resolve()
+    while current_path != current_path.parent:
+        log_config_path = current_path / log_fn
+        if log_config_path.exists():
+            return log_config_path
+        current_path = current_path.parent
+    return None  # Not found
+
+def get_log_config(log_fn = "uvicorn_log_config.yaml") -> Optional[Dict]:
+    """
+    Get the log configuration as a dictionary, parsed from the YAML file.
+    """
+    log_config_path = find_log_config(log_fn)
+    if log_config_path:
+        with open(log_config_path, 'r') as f:
+            return yaml.safe_load(f)
+    return None  # Not found
+
 if __name__ == "__main__":
     # This is a simple way to run the server for development.
     # For production, you would typically use a command like:
     # uvicorn src.jina_server.serve:app --host 0.0.0.0 --port 8000
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=get_log_config())
