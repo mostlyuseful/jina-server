@@ -1,0 +1,10 @@
+services:
+  jina-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.nvidia
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "80:80"
