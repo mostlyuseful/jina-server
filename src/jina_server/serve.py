@@ -1,3 +1,6 @@
+# Jina Server - A FastAPI server for serving Jina embeddings
+# Copyright (C) 2025 Maurice-Pascal Sonnemann <mpsonnemann@gmail.com>
+
 import logging
 import time
 import yaml
@@ -40,6 +43,19 @@ class EmbedResponseData(BaseModel):
 # --- Model Configuration ---
 MODEL_NAME = "jinaai/jina-embeddings-v3"
 
+def get_recommended_device():
+    """
+    Get the recommended device for running the model.
+    """
+    # Order: CUDA > MPS > CPU
+    import torch
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
+
 # --- Lifespan Management (Model Loading & Cleanup) ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,7 +63,9 @@ async def lifespan(app: FastAPI):
     logger.info("Lifespan: Importing transformers")
     from transformers import AutoModel
     logger.info(f"Lifespan: Application startup... Loading model {MODEL_NAME}")
-    model = AutoModel.from_pretrained(MODEL_NAME, trust_remote_code=True, device_map="auto")
+    device = get_recommended_device()
+    model = AutoModel.from_pretrained(MODEL_NAME, trust_remote_code=True, local_files_only=True)
+    model.to(device)
     app.state.model = model
     app.state.model_name = MODEL_NAME
     logger.info(f"Lifespan: Model '{MODEL_NAME}' loaded successfully.")
@@ -151,8 +169,21 @@ def get_log_config(log_fn = "uvicorn_log_config.yaml") -> Optional[Dict]:
             return yaml.safe_load(f)
     return None  # Not found
 
+def main_serve():
+    """
+    Start the FastAPI server under Uvicorn.
+    """
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=get_log_config())
+
+def main_download_model():
+    """
+    Download the model to the local cache.
+    """
+    from transformers import AutoModel
+    AutoModel.from_pretrained(MODEL_NAME, trust_remote_code=True, local_files_only=False)
+
 if __name__ == "__main__":
     # This is a simple way to run the server for development.
     # For production, you would typically use a command like:
     # uvicorn src.jina_server.serve:app --host 0.0.0.0 --port 8000
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=get_log_config())
+    main_serve()
