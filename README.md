@@ -15,7 +15,6 @@ Out of scope:
 - No authentication or rate limiting
   If you need these features, consider using a reverse proxy like Nginx or Traefik.
 - No caching - embeddings are always regenerated
-- No batch processing - single text input per request
 
 ## Installation
 
