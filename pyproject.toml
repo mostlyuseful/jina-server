@@ -65,3 +65,6 @@ build-backend = "hatchling.build"
 cuda = [
     "nvidia-cudnn-cu12>=9.5.1.17",
 ]
+dev = [
+    "ipython>=9.2.0",
+]
