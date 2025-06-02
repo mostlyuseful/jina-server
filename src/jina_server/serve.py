@@ -95,10 +95,7 @@ def _run_inference(model, texts: list[str], task: Optional[str] = None) -> list[
         task: Optional task name (one of 'retrieval.query', 'retrieval.passage', 
               'separation', 'classification', 'text-matching')
     """
-    # .encode typically returns a list of embeddings (np.ndarray)
-    # For a single text, we take the first element.
-    # Pass the 'task' parameter to model.encode if provided
-    embedding_np = model.encode(texts, task=task)[0]
+    embedding_np = model.encode(texts, task=task)
     return embedding_np.tolist() # Convert numpy array to Python list for JSON serialization
 
 # --- API Endpoints ---
