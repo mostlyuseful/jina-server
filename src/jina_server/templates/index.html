@@ -54,13 +54,14 @@
             
             const text = document.getElementById('text').value;
             const task = document.getElementById('task').value;
-            
+            const texts = [text];
+
             // Hide previous results/errors
             document.getElementById('result').classList.add('hidden');
             document.getElementById('error').classList.add('hidden');
             
             try {
-                payload = task ? { text, task } : { text };
+                payload = task ? { texts, task } : { texts };
                 const response = await fetch('/v1/embed', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
